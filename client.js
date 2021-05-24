@@ -1,8 +1,18 @@
 ((opt) => {
-  const { url, reconnectTimeout } = JSON.parse(opt);
+  const { url, reconnectTimeout, retries } = JSON.parse(opt);
 
-  const build = {
-    current: null,
+  const state = {
+    build: null,
+    retry: 0,
+    statusPosted: false,
+  };
+
+  const shouldRetry = () => (retries === 'always' || state.retry + 1 >= retries);
+
+  const nextRetry = () => {
+    if (retries !== 'always') {
+      state.retry = Math.min(state.retry + 1, retries);
+    }
   };
 
   const wait = () => new Promise((resolve) => setTimeout(resolve, reconnectTimeout));
@@ -11,7 +21,12 @@
     return new Promise((resolve) => {
       const socket = new WebSocket(url);
 
-      socket.addEventListener('open', () => console.info('[Reloader connected]'));
+      socket.addEventListener('open', () => {
+        if (!state.statusPosted) {
+          console.info('[Reloader connected]');
+          state.statusPosted = true;
+        }
+      });
 
       socket.addEventListener('error', () => {
         socket.close();
@@ -22,9 +37,9 @@
         const message = JSON.parse(event.data);
 
         if (message.type === 'init') {
-          if (build.current === null) {
-            build.current = message.build;
-          } else if (build.current !== message.build) {
+          if (state.build === null) {
+            state.build = message.build;
+          } else if (build.build !== message.build) {
             location.reload();
           }
         }
@@ -46,7 +61,11 @@
       try {
         looping = await connect();
       } finally {
-        await wait();
+        if (shouldRetry()) {
+          await wait();
+        } else {
+          break;
+        }
       }
     }
   };

@@ -7,16 +7,9 @@ const state = {
   uuid: null,
 };
 
-const enabled = (build) => {
-  if (build.initialOptions.watch === undefined) {
-    console.log('No watch mode detected. Did you forgot to specify `watch: true` ?')
-    return false;
-  }
+const enabled = (build) => build.initialOptions.watch === true;
 
-  return true;
-};
-
-const useServer = (build, { host, port, reconnectTimeout }) => {
+const useServer = (build, { host, port, reconnectTimeout, retries }) => {
   const wss = new ws.Server({ host, port });
   const send = (socket, message) => socket.send(JSON.stringify(message));
 
@@ -28,9 +21,14 @@ const useServer = (build, { host, port, reconnectTimeout }) => {
     wss.clients.forEach(socket => send(socket, { type: 'build' }))
   });
 
+  const url = `ws://${host}:${port}/`;
+
+  console.info('[Reloader] Listening on', url);
+
   return {
     reconnectTimeout,
-    url: `ws://${host}:${port}/`,
+    retries,
+    url,
   };
 };
 
@@ -39,6 +37,7 @@ const useOptions = (overrides) => ({
   host:             'localhost',
   port:             8001,
   reconnectTimeout: 5000,
+  retries:          10,
 });
 
 const inject = (build, server) => {
