@@ -7,9 +7,37 @@
     statusPosted: false,
   };
 
-  const renderErrorBody = (errors) => {
-    const zIndexMax = 2147483647;
+  const styles = `
+    #esbuild-reloader-error-overlay {
+      z-index: 2147483647;
+      position: absolute;
+      background: #fff;
+      width: 100vw;
+      height: 100vh;
+      top: 0;
+    }
 
+    .red { color: #f00; }
+    pre { padding: 0 16px; font-size: 1.25em;}
+    h1 { margin: 0; padding: 16px; }
+  `;
+
+  const ensureOverlayElement = () => {
+    const existing = document.querySelector('#esbuild-reloader-error-overlay');
+    if (existing !== null) {
+      return existing;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = "esbuild-reloader-error-overlay";
+    overlay.innerHTML = `<style>${styles}</style><div id="errors" />`;
+
+    document.body.append(overlay);
+
+    return overlay;
+  };
+
+  const renderErrorBody = (errors) => {
     const errorsContent = errors.map(({ location, text }) => {
       const positionInfo = `${location.file}:${location.line}:${location.column}`;
       const sourceDecoration = `${location.line} | `;
@@ -23,42 +51,12 @@
       return `<pre>${pathLine}\n${sourceLine}\n<span class="red">${pointerLine}</span></pre>`;
     });
 
-    const template = `
-      <div>
-        <style>
-        #esbuild-reloader-error-overlay {
-          z-index: ${zIndexMax};
-          position: absolute;
-          background: #fff;
-          width: 100vw;
-          height: 100vh;
-          top: 0;
-        }
+    const overlay = ensureOverlayElement();
 
-        .red { color: #f00; }
-        pre { padding: 0 16px; font-size: 1.25em;}
-        h1 { margin: 0; padding: 16px; }
-        </style>
-
-
-        <h1>Errors occured during the build:</h1>
-        ${errorsContent}
-      </div>
+    overlay.querySelector("#errors").innerHTML = `
+      <h1>Errors occured during the build:</h1>
+      ${errorsContent}
     `;
-
-    const existing = document.querySelector('#esbuild-reloader-error-overlay');
-
-    if (existing !== null) {
-      existing.innerHTML = template;
-    } else {
-      const overlay = document.createElement('div');
-      document.body.append(overlay);
-      overlay.outerHTML = `
-        <div id="esbuild-reloader-error-overlay">
-          ${template}
-        </div>
-      `
-    }
   };
 
   const connect = () => {
