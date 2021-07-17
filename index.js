@@ -18,7 +18,13 @@ const useServer = (build, { host, port, reconnectTimeout, retries }) => {
   build.onEnd(result => {
     state.uuid = crypto.randomUUID();
 
-    wss.clients.forEach(socket => send(socket, { type: 'build' }))
+    wss.clients.forEach(socket => {
+      if (result.errors.length === 0) {
+        send(socket, { type: 'build' });
+      } else {
+        send(socket, { type: 'error', errors: result.errors });
+      }
+    });
   });
 
   const url = `ws://${host}:${port}/`;
