@@ -46,9 +46,9 @@
 
       const pathLine = `> ${positionInfo}: <span class="red">error: </span> ${text}`;
       const sourceLine = `${sourceDecoration}${location.lineText}`;
-      const pointerLine = `${errorPadding}${errorPointer}`;
+      const pointerLine = `<span class="red">${errorPadding}${errorPointer}</span>`;
 
-      return `<pre>${pathLine}\n${sourceLine}\n<span class="red">${pointerLine}</span></pre>`;
+      return `<pre>${pathLine}\n${sourceLine}\n${pointerLine}</pre>`;
     });
 
     const overlay = ensureOverlayElement();
