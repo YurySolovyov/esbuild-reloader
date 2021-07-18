@@ -7,15 +7,57 @@
     statusPosted: false,
   };
 
-  const shouldRetry = () => (retries === 'always' || state.retry + 1 >= retries);
-
-  const nextRetry = () => {
-    if (retries !== 'always') {
-      state.retry = Math.min(state.retry + 1, retries);
+  const styles = `
+    #esbuild-reloader-error-overlay {
+      z-index: 2147483647;
+      position: absolute;
+      background: #fff;
+      width: 100vw;
+      height: 100vh;
+      top: 0;
     }
+
+    .red { color: #f00; }
+    pre { padding: 0 16px; font-size: 1.25em;}
+    h1 { margin: 0; padding: 16px; }
+  `;
+
+  const ensureOverlayElement = () => {
+    const existing = document.querySelector('#esbuild-reloader-error-overlay');
+    if (existing !== null) {
+      return existing;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = "esbuild-reloader-error-overlay";
+    overlay.innerHTML = `<style>${styles}</style><div id="errors" />`;
+
+    document.body.append(overlay);
+
+    return overlay;
   };
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, reconnectTimeout));
+  const renderErrorBody = (errors) => {
+    const errorsContent = errors.map(({ location, text }) => {
+      const positionInfo = `${location.file}:${location.line}:${location.column}`;
+      const sourceDecoration = `${location.line} | `;
+      const errorPointer = "^".repeat(location.length)
+      const errorPadding = " ".repeat(sourceDecoration.length + location.column);
+
+      const pathLine = `> ${positionInfo}: <span class="red">error: </span> ${text}`;
+      const sourceLine = `${sourceDecoration}${location.lineText}`;
+      const pointerLine = `<span class="red">${errorPadding}${errorPointer}</span>`;
+
+      return `<pre>${pathLine}\n${sourceLine}\n${pointerLine}</pre>`;
+    });
+
+    const overlay = ensureOverlayElement();
+
+    overlay.querySelector("#errors").innerHTML = `
+      <h1>Errors occured during the build:</h1>
+      ${errorsContent}
+    `;
+  };
 
   const connect = () => {
     return new Promise((resolve) => {
@@ -33,7 +75,7 @@
         resolve(true);
       });
 
-      socket.addEventListener('message', (event) => {
+      socket.addEventListener('message', event => {
         const message = JSON.parse(event.data);
 
         if (message.type === 'init') {
@@ -48,11 +90,19 @@
           resolve(false);
           location.reload();
         }
+
+        if (message.type === 'error') {
+          renderErrorBody(message.errors);
+        }
       });
 
       socket.addEventListener('close', () => resolve(true));
     });
   };
+
+  const shouldRetry = () => (retries === 'always' || state.retry + 1 >= retries);
+
+  const wait = () => new Promise((resolve) => setTimeout(resolve, reconnectTimeout));
 
   const loop = async () => {
     let looping = true;
