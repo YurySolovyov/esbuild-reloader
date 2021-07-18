@@ -1,6 +1,6 @@
 {
   "name": "esbuild-reloader",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Yury Solovyov",
   "description": "Plugin for esbuild that reloads page on every new build",
   "homepage": "https://github.com/YurySolovyov/esbuild-reloader",
