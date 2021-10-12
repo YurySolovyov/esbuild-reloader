@@ -39,11 +39,11 @@ const useServer = (build, { host, port, reconnectTimeout, retries }) => {
 };
 
 const useOptions = (overrides) => ({
-  ...overrides,
   host:             'localhost',
   port:             8001,
   reconnectTimeout: 5000,
   retries:          10,
+  ...overrides,
 });
 
 const inject = (build, server) => {
