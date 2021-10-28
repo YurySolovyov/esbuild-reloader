@@ -7,7 +7,7 @@ const state = {
   uuid: null,
 };
 
-const enabled = (build) => build.initialOptions.watch === true;
+const enabled = (build) => Boolean(build.initialOptions.watch);
 
 const useServer = (build, { host, port, reconnectTimeout, retries }) => {
   const wss = new ws.Server({ host, port });
