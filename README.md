@@ -15,27 +15,39 @@ yarn add -D esbuild-reloader
 
 ## Configuration
 
-This assumes `watch` mode and does nothing for regular builds:
+To use reloader, use watch mode via context API:
 
 ```js
 const reloader = require('esbuild-reloader');
 
-esbuild.build({
-  // ...
-  watch: true,
-  // ...
-  plugins: [
+const watch = async () => {
+  const context = await esbuild.context({
     // ...
-    reloader(),
-  ],
-});
+    plugins: [
+      // ...
+      reloader({ enabled: () => true }),
+    ],
+  });
 
+  await context.watch();
+};
+
+watch();
+```
+
+`enabled` field controls reloader activation in case you want to run it conditionally, e.g:
+
+```js
+{
+  enabled: () => process.env.NODE_ENV === 'development'
+}
 ```
 
 ### Options
 
 ```js
 {
+  enabled: () => Boolean      // default () => false
   host: String,               // default 'localhost'
   port: Number,               // default 8001
   reconnectTimeout: Number,   // default 5000
