@@ -81,7 +81,7 @@
         if (message.type === 'init') {
           if (state.build === null) {
             state.build = message.build;
-          } else if (build.build !== message.build) {
+          } else if (state.build !== message.build) {
             location.reload();
           }
         }

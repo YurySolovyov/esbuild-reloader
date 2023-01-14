@@ -7,7 +7,7 @@ const state = {
   uuid: null,
 };
 
-const enabled = (build) => Boolean(build.initialOptions.watch);
+const enabledDefault = () => false;
 
 const useServer = (build, { host, port, reconnectTimeout, retries }) => {
   const wss = new ws.Server({ host, port });
@@ -63,6 +63,8 @@ const inject = (build, server) => {
 module.exports = (overrides = {}) => ({
   name: 'reloader',
   setup(build) {
+    const enabled = overrides.enabled || enabledDefault;
+
     if (enabled(build)) {
       const options = useOptions(overrides);
       const server = useServer(build, options);
